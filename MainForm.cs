@@ -62,6 +62,12 @@ namespace WindowsFormsApplication1
         {
             if (windowHandle != IntPtr.Zero)
             {
+                windowP.Refresh();
+                if (windowP.HasExited)
+                {
+                    lblStatusBar.Text = "Game Window Exited | Searching for new window.";
+                    doWindowSearch();
+                }
                 IntPtr currentForegroundWindow = GetForegroundWindow();
                 if (currentForegroundWindow == windowHandle)
                 {
@@ -89,23 +95,32 @@ namespace WindowsFormsApplication1
             else
             {
                 lblStatusBar.Text = "Searching for wildstar window...";
-                IntPtr handle;
-                int pid;
-                if (findWindow(out handle, out pid))
-                {
-                    windowPid = pid;
-                    windowHandle = handle;
-                   // start();
-                }
+                doWindowSearch();
             }
         }
 
+        private void doWindowSearch()
+        {
+            
+            IntPtr handle;
+            int pid;
+            if (findWindow(out handle, out pid))
+            {
+                windowPid = pid;
+                windowHandle = handle;
+                windowP = Process.GetProcessById(pid);
+                // start();
+            }
+        }
         private bool findWindow(out IntPtr handle, out int pid)
         {
             Process[] pList = Process.GetProcesses();
             foreach (Process p in pList)
             {
-                if (p.MainWindowTitle.Contains("WildStar ") && p.MainWindowTitle.Length == 13)
+
+                int buildNumber;
+                bool parsed = int.TryParse(p.MainWindowTitle.Substring(Math.Max(0, p.MainWindowTitle.Length - 4)), out buildNumber);
+                if (p.MainWindowTitle.Contains("WildStar ") && p.MainWindowTitle.Length == 13 && parsed && buildNumber > 1000 && buildNumber < 9999)
                 {
                     handle = p.MainWindowHandle;
                     GetWindowThreadProcessId(handle, out pid);
@@ -183,5 +198,7 @@ namespace WindowsFormsApplication1
                 System.Environment.Exit(1);
             }
         }
+
+        public Process windowP { get; set; }
     }
 }
